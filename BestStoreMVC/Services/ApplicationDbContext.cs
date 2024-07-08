@@ -1,4 +1,5 @@
 ﻿
+using BestStoreMVC.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BestStoreMVC.Services
@@ -10,6 +11,9 @@ namespace BestStoreMVC.Services
         {
             // Call it options and pass it to the base class
         }
+
+        // Name of table in the database
+        public DbSet<Product> Products { get; set; }
 
     }
 }
