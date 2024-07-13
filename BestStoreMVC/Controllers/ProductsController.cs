@@ -67,5 +67,85 @@ namespace BestStoreMVC.Controllers
 
             return RedirectToAction("Index", "Products");
         }
+
+        public IActionResult Edit(int id)
+        {
+            var product = context.Products.Find(id);
+            if (product == null)
+            {
+                return RedirectToAction("Index", "Products");
+            }
+
+            // save to database
+            ProductDto productDto = new ProductDto()
+            {
+                Name = product.Name,
+                Brand = product.Brand,
+                Category = product.Category,
+                Price = product.Price,
+                Description = product.Description,
+            };
+
+            // Add more information to the view data
+            ViewData["ProductId"] = product.Id;
+            ViewData["ImageFile"] = product.ImageFile;
+            ViewData["CreatedAt"] = product.CreatedAt.ToString("MM/dd/yyyy");
+
+
+            return View(productDto);
+        }
+
+        [HttpPost]
+        public IActionResult Edit(int id, ProductDto productDto)
+        {
+
+            var product = context.Products.Find(id);
+            if (product == null)
+            {
+                return RedirectToAction("Index", "Products");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // Add more information to the view data
+                ViewData["ProductId"] = product.Id;
+                ViewData["ImageFile"] = product.ImageFile;
+                ViewData["CreatedAt"] = product.CreatedAt.ToString("MM/dd/yyyy");
+
+                return View(productDto);
+            }
+
+            // Update Image File
+            if (productDto.ImageFile != null)
+            {
+                string newFileName = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+                newFileName += Path.GetExtension(productDto.ImageFile?.FileName);
+
+                string imageFullPath = webEenv.WebRootPath + "/products/" + newFileName;
+                using (var stream = System.IO.File.Create(imageFullPath))
+                {
+                    productDto?.ImageFile?.CopyTo(stream);
+                }
+
+                // delete the old image
+                string oldImageFilePath = webEenv.WebRootPath + "/products/" + product.ImageFile;
+                System.IO.File.Delete(oldImageFilePath);
+
+                product.ImageFile = newFileName;
+            }
+
+            // save to database
+            product.Name = productDto.Name;
+            product.Brand = productDto.Brand;
+            product.Category = productDto.Category;
+            product.Price = productDto.Price;
+            product.Description = productDto.Description;
+            product.CreatedAt = DateTime.Now;
+
+            // save object to the database
+            context.SaveChanges();
+
+            return RedirectToAction("Index", "Products");
+        }
     }
 }
