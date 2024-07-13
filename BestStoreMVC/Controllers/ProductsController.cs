@@ -46,8 +46,24 @@ namespace BestStoreMVC.Controllers
             string imageFullPath = webEenv.WebRootPath + "/products/" + newFileName;
             using (var stream = System.IO.File.Create(imageFullPath))
             {
-                productDto.ImageFile.CopyTo(stream);
+                productDto?.ImageFile?.CopyTo(stream);
             }
+
+            // save to database
+            Product product = new Product()
+            {
+                Name = productDto.Name,
+                Brand = productDto.Brand,
+                Category = productDto.Category,
+                Price = productDto.Price,
+                Description = productDto.Description,
+                ImageFile = newFileName,
+                CreatedAt = DateTime.Now,
+            };
+
+            // save object to the database
+            context.Products.Add(product);
+            context.SaveChanges();
 
             return RedirectToAction("Index", "Products");
         }
