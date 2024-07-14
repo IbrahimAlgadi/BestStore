@@ -8,15 +8,40 @@ namespace BestStoreMVC.Controllers
     {
         private readonly ApplicationDbContext context;
         private readonly IWebHostEnvironment webEenv;
+        private readonly int pageSize = 5;
 
         public ProductsController(ApplicationDbContext context, IWebHostEnvironment webEenv)
         {
             this.context = context;
             this.webEenv = webEenv;
         }
-        public IActionResult Index()
+        public IActionResult Index(int pageIndex)
         {
-            var products = context.Products.OrderByDescending(p => p.Id).ToList();
+            IQueryable<Product> query = context.Products;
+            // ordering
+            query = query.OrderByDescending(p => p.Id);
+            // pagination
+            if (pageIndex < 0)
+            {
+                pageIndex = 1;
+            }
+
+            decimal count = query.Count();
+            int totalPages = (int) Math.Ceiling(count / pageSize);
+            
+            if (pageIndex > totalPages)
+            {
+                pageIndex = totalPages;
+            }
+
+            query = query.Skip((pageIndex - 1) * pageSize).Take(pageSize); 
+
+            var products = query.ToList();
+
+            ViewData["PageIndex"] = pageIndex;
+            ViewData["TotalPages"] = totalPages;
+
+
             return View(products);
         }
 
@@ -144,6 +169,25 @@ namespace BestStoreMVC.Controllers
 
             // save object to the database
             context.SaveChanges();
+
+            return RedirectToAction("Index", "Products");
+        }
+
+        public IActionResult Delete(int id)
+        {
+
+            var product = context.Products.Find(id);
+            if (product == null)
+            {
+                return RedirectToAction("Index", "Products");
+            }
+
+            // delete the product image
+            string oldImageFilePath = webEenv.WebRootPath + "/products/" + product.ImageFile;
+            System.IO.File.Delete(oldImageFilePath);
+
+            context.Products.Remove(product);
+            context.SaveChanges(true);
 
             return RedirectToAction("Index", "Products");
         }
