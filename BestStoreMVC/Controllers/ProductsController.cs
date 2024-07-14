@@ -1,9 +1,11 @@
 ﻿using BestStoreMVC.Models;
 using BestStoreMVC.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BestStoreMVC.Controllers
 {
+    [Route("/Admin/[controller]/{action=Index}/{id?}")]
     public class ProductsController : Controller
     {
         private readonly ApplicationDbContext context;
@@ -15,16 +17,144 @@ namespace BestStoreMVC.Controllers
             this.context = context;
             this.webEenv = webEenv;
         }
-        public IActionResult Index(int pageIndex)
+        public IActionResult Index(int pageIndex, string? search, string? orderBy, string? column)
         {
             IQueryable<Product> query = context.Products;
+            // search
+            if (search != null)
+            {
+                search = search.Trim();
+                Console.WriteLine("Search Value: " + search);
+                query = query.Where(p => p.Name.Contains(search) || p.Brand.Contains(search));
+            }
+
+            // sort functionality
+            string[] validColumns = { "Id", "Name", "Brand", "Category", "Price", "CreatedAt" };
+            string[] validOrderBy = { "desc", "asc" };
+
+            if (string.IsNullOrEmpty(column) || !validColumns.Contains(column))
+            {
+                column = "Id";
+            }
+
+            if (string.IsNullOrEmpty(orderBy) || !validOrderBy.Contains(orderBy))
+            {
+                column = "desc";
+            }
+
             // ordering
-            query = query.OrderByDescending(p => p.Id);
+            // query = query.OrderByDescending(p => p.Id);
+
+            //if (column == "Name")
+            //{
+            //    if (orderBy == "asc")
+            //    {
+            //        query = query.OrderBy(p => p.Name);
+            //    }
+            //    else
+            //    {
+            //        query = query.OrderByDescending(p => p.Name);
+            //    }
+            //}
+
+            switch (column)
+            {
+                case "Id":
+                    {
+                        if (orderBy == "asc")
+                        {
+                            query = query.OrderBy(p => p.Id);
+                        }
+                        else
+                        {
+                            query = query.OrderByDescending(p => p.Id);
+                        }
+                        break; 
+                    }
+                case "Name":
+                    {
+                        if (orderBy == "asc")
+                        {
+                            query = query.OrderBy(p => p.Name);
+                        }
+                        else
+                        {
+                            query = query.OrderByDescending(p => p.Name);
+                        }
+                        break;
+                    }
+                case "Brand":
+                    {
+                        if (orderBy == "asc")
+                        {
+                            query = query.OrderBy(p => p.Brand);
+                        }
+                        else
+                        {
+                            query = query.OrderByDescending(p => p.Brand);
+                        }
+                        break;
+                    }
+                case "Category":
+                    {
+                        if (orderBy == "asc")
+                        {
+                            query = query.OrderBy(p => p.Category);
+                        }
+                        else
+                        {
+                            query = query.OrderByDescending(p => p.Category);
+                        }
+                        break;
+                    }
+                case "Price":
+                    {
+                        if (orderBy == "asc")
+                        {
+                            query = query.OrderBy(p => p.Price);
+                        }
+                        else
+                        {
+                            query = query.OrderByDescending(p => p.Price);
+                        }
+                        break;
+                    }
+                case "CreatedAt":
+                    {
+                        if (orderBy == "asc")
+                        {
+                            query = query.OrderBy(p => p.CreatedAt);
+                        }
+                        else
+                        {
+                            query = query.OrderByDescending(p => p.CreatedAt);
+                        }
+                        break;
+                    }
+                default: break;
+            }
+            
+
+            //if (orderBy == "asc")
+            //{
+            //    query.OrderBy(e => EF.Property<object>(e, column));
+            //}
+            //else
+            //{
+            //    query.OrderByDescending(e => EF.Property<object>(e, column));
+            //}
+
+            //query = orderBy == "asc" ?
+            //    query.OrderBy(e => EF.Property<object>(e, column))
+            //    : 
+            //    query.OrderByDescending(e => EF.Property<object>(e, column));
+
+
             // pagination
             if (pageIndex < 0)
             {
                 pageIndex = 1;
-            }
+            } 
 
             decimal count = query.Count();
             int totalPages = (int) Math.Ceiling(count / pageSize);
@@ -33,14 +163,19 @@ namespace BestStoreMVC.Controllers
             {
                 pageIndex = totalPages;
             }
+            var offsetValue = ((int)pageIndex - 1) * pageSize;
 
-            query = query.Skip((pageIndex - 1) * pageSize).Take(pageSize); 
+            query = query.Skip(offsetValue > 1 ? offsetValue : 0).Take(pageSize); 
 
             var products = query.ToList();
 
             ViewData["PageIndex"] = pageIndex;
             ViewData["TotalPages"] = totalPages;
+            
+            ViewData["Search"] = search ?? "";
 
+            ViewData["OrderBy"] = orderBy;
+            ViewData["Column"] = column;
 
             return View(products);
         }

@@ -1,4 +1,5 @@
-﻿@*
+﻿@using Microsoft.AspNetCore.Html
+@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @model List<Product>
@@ -6,6 +7,25 @@
 @{
     int pageIndex = (int) ViewData["PageIndex"]!;
     int totalPages = (int) ViewData["TotalPages"]!;
+    string search = (string) ViewData["Search"]!;
+    string column = (string) ViewData["Column"]!;
+    string orderBy = (string) ViewData["OrderBy"]!;
+
+    HtmlString getArrow(string tableColumn)
+    {
+        if (tableColumn != column) return new HtmlString("");
+
+        if (orderBy == "desc") 
+        {
+            return new HtmlString("<i class='bi bi-arrow-down'></i>");
+            // return new HtmlString("&#8595;");
+        }
+        else 
+        {
+            return new HtmlString("<i class='bi bi-arrow-up'></i>");
+            // return new HtmlString("&#8593;");
+        }
+    }
 }
 
 <h2 class="text-center mb-5">
@@ -26,23 +46,54 @@
 
     <div class="col">
 
+        <form class="d-flex" role="search">
+            <input 
+                class="form-control me-2" 
+                type="search" 
+                name="search" 
+                value="@search" 
+                placeholder="Search by Name or Brand" 
+                aria-label="Search"
+            >
+            <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
+
     </div>
 
 </div>
 
 
 
+<script>
+    function sortTable(column) {
+        let orderBy = 'desc';
+        
+        let currentColumn = "@column";
+        let currentOrder = "@orderBy";
+
+        if (column === currentColumn) {
+            if (currentOrder === "asc")
+                orderBy = "desc";
+            else
+                orderBy = "asc";
+        }
+
+        window.location.href = "?search=@(search)&column=" + column + "&orderBy=" + orderBy;
+    }
+</script>
+
+
 
 <table class="table">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Brand</th>
-            <th>Category</th>
-            <th>Price</th>
+            <th style="cursor: pointer;" onclick="sortTable('Id')">ID @getArrow("Id")</th>
+            <th style="cursor: pointer;" onclick="sortTable('Name')">Name @getArrow("Name")</th>
+            <th style="cursor: pointer;" onclick="sortTable('Brand')">Brand @getArrow("Brand")</th>
+            <th style="cursor: pointer;" onclick="sortTable('Category')">Category @getArrow("Category")</th>
+            <th style="cursor: pointer;" onclick="sortTable('Price')">Price @getArrow("Price")</th>
             <th>Image</th>
-            <th>Created At</th>
+            <th style="cursor: pointer;" onclick="sortTable('CreatedAt')">Created At @getArrow("CreatedAt")</th>
             <th>Action</th>
         </tr>
     </thead>
@@ -96,7 +147,9 @@
                 <a
                     class="page-link"
                     asp-route-page-index="@i"
-
+                    asp-route-search="@search"
+                    asp-route-column="@column"
+                    asp-route-orderBy="@orderBy"
                 >@i</a>
             </li>
         }
